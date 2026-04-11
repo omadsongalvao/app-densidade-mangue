@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Densidade da Madeira - Mangue</title>
+
+<link rel="manifest" href="manifest.json">
+
+<style>
+
+body {
+    font-family: Arial;
+    padding: 15px;
+    background: #f5efe6;
+    color: #3e2f1c;
+}
+
+.box {
+    background: #d2b48c;
+    padding: 15px;
+    margin-bottom: 12px;
+    border-radius: 12px;
+    box-shadow: 2px 2px 8px rgba(0,0,0,0.2);
+}
+
+h2 {
+    text-align: center;
+    color: #5a3e1b;
+}
+
+h3 {
+    color: #4b2e0f;
+}
+
+input, select {
+    width: 100%;
+    padding: 10px;
+    margin-top: 5px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+    border: none;
+}
+
+button {
+    padding: 14px;
+    background: #5a3e1b;
+    color: white;
+    border: none;
+    width: 100%;
+    border-radius: 10px;
+    font-weight: bold;
+}
+
+button:active {
+    background: #3e2f1c;
+}
+
+/* resultado base */
+.result {
+    padding: 12px;
+    border-radius: 10px;
+    margin-top: 10px;
+    font-weight: bold;
+}
+
+/* cores por densidade */
+.leve {
+    background: #c8f7c5; /* verde */
+}
+
+.media {
+    background: #fff3b0; /* amarelo */
+}
+
+.pesada {
+    background: #8b5a2b; /* marrom escuro */
+    color: white;
+}
+
+</style>
+</head>
+
+<body>
+
+<h2>🪵 Densidade da Madeira - Manguezal</h2>
+
+<div class="box">
+<h3>🌳 Espécie</h3>
+<select id="especie">
+<option>Rhizophora mangle</option>
+<option>Rhizophora racemosa</option>
+<option>Rhizophora harrisonii</option>
+<option>Avicennia germinans</option>
+<option>Avicennia schaueriana</option>
+<option>Laguncularia racemosa</option>
+<option>Conocarpus erectus</option>
+<option>Outra</option>
+</select>
+
+<h3>🪵 Amostra (ID)</h3>
+<input type="text" id="amostra">
+</div>
+
+<div class="box">
+<h3>📍 GPS</h3>
+<p id="gps">---</p>
+<button onclick="gps()">Capturar GPS</button>
+</div>
+
+<div class="box">
+<h3>📏 Medidas</h3>
+
+<strong>Saturado</strong>
+<input type="number" id="ds" placeholder="Diâmetro Saturado (mm)">
+<input type="number" id="hs" placeholder="Altura Saturado (mm)">
+
+<strong>Seco</strong>
+<input type="number" id="dsec" placeholder="Diâmetro Seco (mm)">
+<input type="number" id="hsec" placeholder="Altura Seco (mm)">
+<input type="number" id="massa" placeholder="Massa Seca (g)">
+</div>
+
+<div class="box">
+<h3>🪵 Resultados Automáticos</h3>
+
+<div class="result" id="resultado">
+Preencha os dados para calcular
+</div>
+
+<button onclick="calcular()">Calcular</button>
+</div>
+
+<button onclick="salvar()">💾 Salvar</button>
+<button onclick="baixar()">📥 Baixar Excel</button>
+
+<script>
+
+let lat="", lon="";
+
+function gps(){
+ navigator.geolocation.getCurrentPosition(p=>{
+  lat=p.coords.latitude;
+  lon=p.coords.longitude;
+  document.getElementById("gps").innerText = lat + ", " + lon;
+ });
+}
+
+function calcular(){
+
+ let ds = parseFloat(document.getElementById("ds").value)/10;
+ let hs = parseFloat(document.getElementById("hs").value)/10;
+ let dsec = parseFloat(document.getElementById("dsec").value)/10;
+ let hsec = parseFloat(document.getElementById("hsec").value)/10;
+ let massa = parseFloat(document.getElementById("massa").value);
+
+ if(!ds || !hs || !dsec || !hsec || !massa){
+  document.getElementById("resultado").innerText = "Preencha todos os campos";
+  return;
+ }
+
+ let volume = Math.PI * Math.pow(ds/2,2) * hs;
+ let densidade = massa / volume;
+
+ let contr_d = ((ds - dsec)/ds)*100;
+ let contr_h = ((hs - hsec)/hs)*100;
+
+ let classe = "";
+ let classeCSS = "";
+
+ if(densidade < 0.50){
+  classe = "🌿 Madeira leve";
+  classeCSS = "leve";
+ } else if(densidade <= 0.72){
+  classe = "🌳 Madeira média";
+  classeCSS = "media";
+ } else {
+  classe = "🪵 Madeira pesada";
+  classeCSS = "pesada";
+ }
+
+ let resultadoDiv = document.getElementById("resultado");
+ resultadoDiv.className = "result " + classeCSS;
+
+ resultadoDiv.innerHTML = `
+ Volume Saturado: ${volume.toFixed(2)} cm³<br>
+ Densidade: ${densidade.toFixed(3)} g/cm³<br>
+ Classificação: ${classe}<br><br>
+ Contração Diâmetro: ${contr_d.toFixed(2)} %<br>
+ Contração Altura: ${contr_h.toFixed(2)} %
+ `;
+}
+
+function salvar(){
+
+ let textoResultado = document.getElementById("resultado").innerText;
+
+ let classificacao = "";
+ if(textoResultado.includes("leve")) classificacao = "leve";
+ else if(textoResultado.includes("média")) classificacao = "média";
+ else if(textoResultado.includes("pesada")) classificacao = "pesada";
+
+ let dados = {
+  especie: document.getElementById("especie").value,
+  amostra: document.getElementById("amostra").value,
+  lat, lon,
+  ds: document.getElementById("ds").value,
+  hs: document.getElementById("hs").value,
+  dsec: document.getElementById("dsec").value,
+  hsec: document.getElementById("hsec").value,
+  massa: document.getElementById("massa").value,
+  classificacao,
+  resultado: textoResultado,
+  data: new Date().toISOString()
+ };
+
+ let banco = JSON.parse(localStorage.getItem("dados")||"[]");
+ banco.push(dados);
+ localStorage.setItem("dados", JSON.stringify(banco));
+
+ alert("Salvo!");
+}
+
+function baixar(){
+
+ let banco = JSON.parse(localStorage.getItem("dados")||"[]");
+
+ let csv = "especie,amostra,lat,lon,ds,hs,dsec,hsec,massa,classificacao,resultado,data\n";
+
+ banco.forEach(d=>{
+  csv += `${d.especie},${d.amostra},${d.lat},${d.lon},${d.ds},${d.hs},${d.dsec},${d.hsec},${d.massa},${d.classificacao},"${d.resultado}",${d.data}\n`;
+ });
+
+ let blob = new Blob([csv], {type:"text/csv"});
+ let a = document.createElement("a");
+ a.href = URL.createObjectURL(blob);
+ a.download = "densidade_madeira.csv";
+ a.click();
+}
+
+if ("serviceWorker" in navigator) {
+ navigator.serviceWorker.register("service-worker.js");
+}
+
+</script>
+
+</body>
+</html>
