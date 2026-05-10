@@ -1,21 +1,30 @@
-const CACHE_NAME = "densidade-v2";
+const CACHE = "wooddensity-v2";
+
+const arquivos = [
+  "./",
+  "./index.html",
+  "./manifest.json",
+  "./icon.png"
+];
 
 self.addEventListener("install", e => {
+
   e.waitUntil(
-    caches.open(CACHE_NAME).then(cache => {
-      return cache.addAll([
-        "./",
-        "./index.html",
-        "./manifest.json"
-      ]);
-    })
+
+    caches.open(CACHE)
+    .then(cache => cache.addAll(arquivos))
+
   );
+
 });
 
 self.addEventListener("fetch", e => {
+
   e.respondWith(
-    caches.match(e.request).then(response => {
-      return response || fetch(e.request);
-    })
+
+    caches.match(e.request)
+    .then(resp => resp || fetch(e.request))
+
   );
+
 });
